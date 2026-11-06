@@ -1,10 +1,9 @@
-
-  name: Costruisci APK
-on:
+name: Costruisci APK
+ on:
   workflow_dispatch:
   push:
     branches: [main]
-jobs:
+    jobs:
   build:
     runs-on: ubuntu-latest
     steps:
