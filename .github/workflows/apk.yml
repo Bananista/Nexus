@@ -1,5 +1,4 @@
-- name: Debug - Elenca file zip
-  run: ls -la *.zip
+
   name: Costruisci APK
 on:
   workflow_dispatch:
