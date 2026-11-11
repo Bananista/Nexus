@@ -1,25 +1,26 @@
-
 name: Costruisci APK
+
 on:
- workflow_dispatch:
- push:
-   branches: [main]
+  workflow_dispatch:
+  push:
+    branches: [main]
+
 jobs:
- build:
-   runs-on: ubuntu-latest
-   steps:
-     - uses: actions/checkout@v4
-     - run: unzip -qo "$(ls Nexus-v*.zip | sort -V | tail -1)"
-     - uses: actions/setup-java@v4
-       with:
-         distribution: temurin
-         java-version: '17'
-     - uses: gradle/actions/setup-gradle@v4
-       with:
-         gradle-version: '8.7'
-     - run: gradle assembleDebug --no-daemon
-       working-directory: Quaderno-apk
-     - uses: actions/upload-artifact@v4
-       with:
-         name: Nexus-apk
-         path: Quaderno-apk/app/build/outputs/apk/debug/app-debug.apk
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -qo "$(ls Nexus-v*.zip | sort -V | tail -1)"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - run: gradle assembleDebug --no-daemon
+        working-directory: Quaderno-github
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nexus-apk
+          path: Quaderno-github/app/build/outputs/apk/debug/app-debug.apk
