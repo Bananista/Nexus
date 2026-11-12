@@ -44,4 +44,3 @@ jobs:
         with:
           name: Nexus-apk
           path: Quaderno-github/app/build/outputs/apk/debug/app-debug.apk
-```[cite: 1]
