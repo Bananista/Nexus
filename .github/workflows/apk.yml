@@ -10,26 +10,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Trova e scompatta il pacchetto ovunque
+      
+      - name: Trova e scompatta il pacchetto
         run: |
-          echo "Contenuto iniziale del repository:"
-          find . -maxdepth 3
-          
           ZIP_FILE=$(find . -name "Nexus-v*.zip" | sort -V | tail -1)
           if [ -n "$ZIP_FILE" ]; then
-            echo "Trovato archivio: $ZIP_FILE"
-            unzip -qo "$ZIP_FILE" -d extracted_content
-            echo "Contenuto estratto:"
-            ls -la extracted_content
+            unzip -qo "$ZIP_FILE"
           else
-            echo "Nessun file Nexus-v*.zip trovato nel repository!"
+            echo "Nessun file Nexus-v*.zip trovato."
           fi
+          ls -la
 
+      # Firma sempre con la stessa chiave: così ogni APK si installa sopra il precedente
+      # senza disinstallare e senza perdere credenziali e dati.
       - name: Usa la chiave di firma fissa
         run: |
           mkdir -p ~/.android
           find . -name "debug.keystore" -exec cp {} ~/.android/debug.keystore \;
+
+      # Versione 11 / 1.1.0, per non essere vista come "downgrade" rispetto all'APK già installato
+      - name: Imposta la versione
+        run: |
+          for f in Quaderno-github/app/build.gradle Quaderno-github/app/build.gradle.kts; do
+            [ -f "$f" ] && sed -i -E 's/(versionCode[ =]+)[0-9]+/\111/; s/(versionName[ =]+")[^"]*"/\11.1.0"/' "$f"
+          done
+          true
 
       - uses: actions/setup-java@v4
         with:
@@ -40,33 +45,11 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Trova progetto, imposta versione e compila
-        run: |
-          SETTINGS_FILE=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
-          if [ -z "$SETTINGS_FILE" ]; then
-            echo "Errore: file settings.gradle non trovato nemmeno dopo l'estrazione!"
-            exit 1
-          fi
-          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
-          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
-          echo "Trovato progetto in: $PROJECT_DIR"
-          
-          cd "$PROJECT_DIR"
-          
-          for f in app/build.gradle app/build.gradle.kts; do
-            if [ -f "$f" ]; then
-              sed -i -E 's/(versionCode[[:space:]]*=[[:space:]]*)[0-9]+/\1111/; s/(versionName[[:space:]]*=[[:space:]]*")[^"]+/\11.1.0/' "$f"
-            fi
-          done
-          
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug --no-daemon
-          else
-            gradle assembleDebug --no-daemon
-          fi
+      - run: gradle assembleDebug --no-daemon
+        working-directory: Quaderno-github
 
       - uses: actions/upload-artifact@v4
         with:
           name: Nexus-apk
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          path: Quaderno-github/app/build/outputs/apk/debug/app-debug.apk
+```[cite: 1]
