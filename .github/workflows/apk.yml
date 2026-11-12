@@ -43,6 +43,13 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Debug struttura cartelle
+        run: |
+          echo "Contenuto della root:"
+          ls -la
+          echo "Contenuto di Quaderno-github (se esiste):"
+          ls -la Quaderno-github || echo "La cartella Quaderno-github non esiste!"
+
       - name: Esegui Gradle build
         working-directory: Quaderno-github
         run: gradle assembleDebug --no-daemon
