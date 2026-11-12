@@ -10,24 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Trova e scompatta il pacchetto
-        run: |
-          ZIP_FILE=$(find . -name "Nexus-v*.zip" | sort -V | tail -1)
-          if [ -n "$ZIP_FILE" ]; then
-            unzip -qo "$ZIP_FILE"
-          else
-            echo "Nessun file Nexus-v*.zip trovato."
-          fi
-          ls -la
-
+      - run: unzip -qo "$(ls Nexus-v*.zip | sort -V | tail -1)"
       # Firma sempre con la stessa chiave: così ogni APK si installa sopra il precedente
       # senza disinstallare e senza perdere credenziali e dati.
       - name: Usa la chiave di firma fissa
         run: |
           mkdir -p ~/.android
-          find . -name "debug.keystore" -exec cp {} ~/.android/debug.keystore \;
-
+          cp Nexus-firma/debug.keystore ~/.android/debug.keystore
       # Versione 11 / 1.1.0, per non essere vista come "downgrade" rispetto all'APK già installato
       - name: Imposta la versione
         run: |
@@ -35,21 +24,16 @@ jobs:
             [ -f "$f" ] && sed -i -E 's/(versionCode[ =]+)[0-9]+/\111/; s/(versionName[ =]+")[^"]*"/\11.1.0"/' "$f"
           done
           true
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-
       - run: gradle assembleDebug --no-daemon
         working-directory: Quaderno-github
-
       - uses: actions/upload-artifact@v4
         with:
           name: Nexus-apk
           path: Quaderno-github/app/build/outputs/apk/debug/app-debug.apk
-```[cite: 1]
