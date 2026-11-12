@@ -11,15 +11,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Trova e scompatta il pacchetto
+      - name: Trova e scompatta il pacchetto ovunque
         run: |
-          ZIP_FILE=$(find . -maxdepth 1 -name "Nexus-v*.zip" | sort -V | tail -1)
+          echo "Contenuto iniziale del repository:"
+          find . -maxdepth 3
+          
+          ZIP_FILE=$(find . -name "Nexus-v*.zip" | sort -V | tail -1)
           if [ -n "$ZIP_FILE" ]; then
-            unzip -qo "$ZIP_FILE"
+            echo "Trovato archivio: $ZIP_FILE"
+            unzip -qo "$ZIP_FILE" -d extracted_content
+            echo "Contenuto estratto:"
+            ls -la extracted_content
           else
-            echo "Nessun file Nexus-v*.zip trovato nella root."
+            echo "Nessun file Nexus-v*.zip trovato nel repository!"
           fi
-          ls -la
 
       - name: Usa la chiave di firma fissa
         run: |
@@ -39,7 +44,7 @@ jobs:
         run: |
           SETTINGS_FILE=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
           if [ -z "$SETTINGS_FILE" ]; then
-            echo "Errore: file settings.gradle non trovato!"
+            echo "Errore: file settings.gradle non trovato nemmeno dopo l'estrazione!"
             exit 1
           fi
           PROJECT_DIR=$(dirname "$SETTINGS_FILE")
@@ -48,14 +53,12 @@ jobs:
           
           cd "$PROJECT_DIR"
           
-          # Imposta la versione
           for f in app/build.gradle app/build.gradle.kts; do
             if [ -f "$f" ]; then
               sed -i -E 's/(versionCode[[:space:]]*=[[:space:]]*)[0-9]+/\1111/; s/(versionName[[:space:]]*=[[:space:]]*")[^"]+/\11.1.0/' "$f"
             fi
           done
           
-          # Compila
           if [ -f "./gradlew" ]; then
             chmod +x ./gradlew
             ./gradlew assembleDebug --no-daemon
