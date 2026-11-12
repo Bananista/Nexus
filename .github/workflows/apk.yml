@@ -10,7 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -qo "$(ls Nexus-v*.zip | sort -V | tail -1)"
+      - run: |
+          ZIP_FILE=$(find . -name "Nexus-v*.zip" | sort -V | tail -1)
+          if [ -n "$ZIP_FILE" ]; then
+            unzip -qo "$ZIP_FILE"
+          else
+            echo "Errore: Nessun file Nexus-v*.zip trovato"
+            exit 1
+          fi
       # Firma sempre con la stessa chiave: così ogni APK si installa sopra il precedente
       # senza disinstallare e senza perdere credenziali e dati.
       - name: Usa la chiave di firma fissa
@@ -37,3 +44,4 @@ jobs:
         with:
           name: Nexus-apk
           path: Quaderno-github/app/build/outputs/apk/debug/app-debug.apk
+```[cite: 1]
