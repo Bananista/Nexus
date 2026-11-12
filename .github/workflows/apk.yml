@@ -26,14 +26,6 @@ jobs:
           mkdir -p ~/.android
           find . -name "debug.keystore" -exec cp {} ~/.android/debug.keystore \;
 
-      - name: Imposta la versione
-        run: |
-          for f in Quaderno-github/app/build.gradle Quaderno-github/app/build.gradle.kts; do
-            if [ -f "$f" ]; then
-              sed -i -E 's/(versionCode[[:space:]]*=[[:space:]]*)[0-9]+/\1111/; s/(versionName[[:space:]]*=[[:space:]]*")[^"]+/\11.1.0/' "$f"
-            fi
-          done
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -43,18 +35,35 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Debug struttura cartelle
+      - name: Trova progetto, imposta versione e compila
         run: |
-          echo "Contenuto della root:"
-          ls -la
-          echo "Contenuto di Quaderno-github (se esiste):"
-          ls -la Quaderno-github || echo "La cartella Quaderno-github non esiste!"
-
-      - name: Esegui Gradle build
-        working-directory: Quaderno-github
-        run: gradle assembleDebug --no-daemon
+          SETTINGS_FILE=$(find . -name "settings.gradle" -o -name "settings.gradle.kts" | head -n 1)
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "Errore: file settings.gradle non trovato!"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          echo "Trovato progetto in: $PROJECT_DIR"
+          
+          cd "$PROJECT_DIR"
+          
+          # Imposta la versione
+          for f in app/build.gradle app/build.gradle.kts; do
+            if [ -f "$f" ]; then
+              sed -i -E 's/(versionCode[[:space:]]*=[[:space:]]*)[0-9]+/\1111/; s/(versionName[[:space:]]*=[[:space:]]*")[^"]+/\11.1.0/' "$f"
+            fi
+          done
+          
+          # Compila
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: Nexus-apk
-          path: Quaderno-github/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
